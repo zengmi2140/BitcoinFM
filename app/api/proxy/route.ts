@@ -158,7 +158,8 @@ export async function GET(request: NextRequest) {
                 'Access-Control-Allow-Origin': '*',
             },
         });
-    } catch (error: any) {
-        return new NextResponse(`Proxy error: ${error.message}`, { status: 500 });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        return new NextResponse(`Proxy error: ${message}`, { status: 500 });
     }
 }

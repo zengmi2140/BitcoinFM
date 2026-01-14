@@ -38,6 +38,8 @@ const parser = new Parser({
   }
 });
 
+type ParsedFeed = Awaited<ReturnType<typeof parser.parseURL>>;
+
 // Parse markdown file to extract [Name](URL) format
 function getPodcastFeeds(lang: Language = DEFAULT_LANGUAGE): Array<{ name: string; url: string }> {
   try {
@@ -94,8 +96,8 @@ export async function getRandomEpisodes(
   const singles = getSingles(safeLang);
 
   // Helper to fetch and parse a feed (cached for this request)
-  const feedCache = new Map<string, any>();
-  const fetchFeed = async (url: string) => {
+  const feedCache = new Map<string, ParsedFeed>();
+  const fetchFeed = async (url: string): Promise<ParsedFeed | null> => {
     if (feedCache.has(url)) return feedCache.get(url);
     try {
       const parsed = await parser.parseURL(url);
@@ -108,7 +110,7 @@ export async function getRandomEpisodes(
   };
 
   // Helper to convert RSS item to PodcastEpisode
-  const convertItem = (item: any, feedName: string, feedImage?: string): PodcastEpisode | null => {
+  const convertItem = (item: Parser.Item, feedName: string, feedImage?: string): PodcastEpisode | null => {
     if (!item.enclosure?.url) return null;
     return {
       id: item.guid || item.link || item.enclosure.url,
@@ -159,7 +161,7 @@ export async function getRandomEpisodes(
       const feedKey = feedInfo.url;
 
       const feedEpisodes: PodcastEpisode[] = [];
-      parsed.items.forEach((item: any) => {
+      parsed.items.forEach((item) => {
         const ep = convertItem(item, parsed.title || feedInfo.name, feedImage);
         if (ep && checkTimePreference(ep) && !selectedIds.has(ep.id)) {
           feedEpisodes.push(ep);

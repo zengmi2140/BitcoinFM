@@ -1,41 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
 export function useMediaQuery(query: string): boolean {
-    const getInitialValue = () => {
-        if (typeof window !== 'undefined') {
-            return window.matchMedia(query).matches;
-        }
-        return false;
+    const getServerSnapshot = () => false;
+    const getSnapshot = () => {
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia(query).matches;
     };
-
-    const [matches, setMatches] = useState(getInitialValue);
-
-    useEffect(() => {
+    const subscribe = (onStoreChange: () => void) => {
+        if (typeof window === 'undefined') return () => {};
         const media = window.matchMedia(query);
-        setMatches(media.matches);
-
-        const listener = (e: MediaQueryListEvent | MediaQueryList) => {
-            setMatches('matches' in e ? e.matches : (e as MediaQueryListEvent).matches);
-        };
+        const handler = () => onStoreChange();
 
         if (media.addEventListener) {
-            media.addEventListener('change', listener as (e: MediaQueryListEvent) => void);
+            media.addEventListener('change', handler);
         } else {
-            media.addListener(listener as (e: MediaQueryListEvent) => void);
+            media.addListener(handler);
         }
 
         return () => {
             if (media.removeEventListener) {
-                media.removeEventListener('change', listener as (e: MediaQueryListEvent) => void);
+                media.removeEventListener('change', handler);
             } else {
-                media.removeListener(listener as (e: MediaQueryListEvent) => void);
+                media.removeListener(handler);
             }
         };
-    }, [query]);
+    };
 
-    return matches;
+    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 export function useIsDesktop(): boolean {

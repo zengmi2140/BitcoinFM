@@ -43,7 +43,6 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
         cyclePlaybackRate,
         toggleTimePreference,
         setLanguage,
-        setEpisode,
     } = usePlayerStore();
 
     const handleTimePreferenceToggle = () => {
@@ -151,7 +150,6 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
     useEffect(() => {
         if (currentEpisode && audioRef.current) {
             audioRef.current.src = currentEpisode.audioUrl;
-            audioRef.current.playbackRate = playbackRate;
             audioRef.current.play().catch(e => console.error("Playback failed", e));
             play();
         }
