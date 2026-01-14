@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Dark Mode Only - PRD Colors */
+    --bg-primary: #111111;
+    --bg-secondary: #1a1a1a;
+    --orange-primary: #FF6F00;
+    --orange-light: #FF9933;
+    --orange-dark: #CC5500;
+    --text-primary: #E5E5E5;
+    --text-secondary: #A3A3A3;
+    --border-color: rgba(255, 111, 0, 0.2);
+    --card-bg: rgba(0, 0, 0, 0.4);
+    --card-border: rgba(255, 111, 0, 0.3);
+  }
+
+  * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-ibm-plex-mono), monospace;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+
+
+  .border-gradient {
+    border-image: linear-gradient(135deg, var(--orange-primary), var(--orange-light), var(--orange-dark)) 1;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+  }
+
+  .glow-strong {
+    box-shadow: 0 0 30px rgba(255, 111, 0, 0.5);
+  }
+
+  .noise-texture {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+  }
+
+  .scanlines {
+    background: linear-gradient(to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.1) 50%,
+        rgba(0, 0, 0, 0) 100%);
+    background-size: 100% 4px;
+    animation: scanline-move 8s linear infinite;
+  }
+
+  @keyframes scanline-move {
+    0% {
+      background-position: 0 0;
+    }
+
+    100% {
+      background-position: 0 100%;
+    }
+  }
+
+  @keyframes soundwave {
+
+    0%,
+    100% {
+      height: 20%;
+      opacity: 0.5;
+    }
+
+    50% {
+      height: 100%;
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulse-glow {
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+    }
+
+    50% {
+      box-shadow: 0 0 40px rgba(255, 111, 0, 0.6);
+    }
+  }
+
+  @keyframes float-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes dice-spin {
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-soundwave {
+    animation: soundwave 0.5s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-float-up {
+    animation: float-up 0.5s ease-out forwards;
+  }
+
+  .animate-ripple {
+    animation: ripple 0.6s ease-out forwards;
+  }
+
+  .animate-dice-spin {
+    animation: dice-spin 0.8s linear infinite;
+  }
+
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.6s ease-out forwards;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  /* Marquee scrolling for long titles */
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee 10s linear infinite;
+  }
+
+  /* Toggle switch styles */
+  .toggle-switch {
+    position: relative;
+    width: 3rem;
+    height: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-switch.active {
+    background: var(--orange-primary);
+    border-color: var(--orange-primary);
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 1rem;
+    height: 1rem;
+    background: var(--text-primary);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+  }
+
+  .toggle-switch.active::after {
+    left: calc(100% - 1.125rem);
+    background: var(--bg-primary);
+  }
+}
