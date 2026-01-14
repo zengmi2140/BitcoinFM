@@ -155,7 +155,7 @@ content/
 
 ```md
 - [What Bitcoin Did](https://feeds.fountain.fm/...)
-- [Yi Cong Zhe Shi](https://anchor.fm/s/.../podcast/rss)
+- [1satpod](https://anchor.fm/s/.../podcast/rss)
 ```
 
 The system parses the `[Name](URL)` shape and treats it as a candidate feed.
