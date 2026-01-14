@@ -269,7 +269,7 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
                     {/* GitHub Link - Desktop Only */}
                     <div className="relative hidden md:flex items-center justify-center">
                         <a
-                            href="https://github.com/niconicodex/bitcoinfm"
+                            href="https://github.com/zengmi2140/BitcoinFM"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--orange-primary)] transition-colors"
