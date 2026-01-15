@@ -146,20 +146,57 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
         return () => document.removeEventListener('click', handleClickOutside);
     }, [langDropdownOpen]);
 
+    const setPlaybackState = useCallback((state: MediaSessionPlaybackState) => {
+        if (!('mediaSession' in navigator)) return;
+        try {
+            navigator.mediaSession.playbackState = state;
+        } catch {
+            // Some browsers may throw if playbackState is unsupported.
+        }
+    }, []);
+
     // Setup audio element
     useEffect(() => {
         if (currentEpisode && audioRef.current) {
-            audioRef.current.src = currentEpisode.audioUrl;
-            audioRef.current.play().catch(e => console.error("Playback failed", e));
-            play();
+            const audio = audioRef.current;
+            audio.src = currentEpisode.audioUrl;
+            setPlaybackState('paused');
+            const playPromise = audio.play();
+            if (playPromise && typeof playPromise.then === 'function') {
+                playPromise
+                    .then(() => setPlaybackState('playing'))
+                    .catch(e => {
+                        console.error("Playback failed", e);
+                        setPlaybackState('paused');
+                    });
+            } else if (!audio.paused) {
+                setPlaybackState('playing');
+            }
         }
-    }, [currentEpisode, play]);
+    }, [currentEpisode, setPlaybackState]);
 
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.playbackRate = playbackRate;
         }
     }, [playbackRate]);
+
+    const updatePositionState = useCallback(() => {
+        if (!('mediaSession' in navigator) || !audioRef.current) return;
+        const audio = audioRef.current;
+        const audioDuration = Number.isFinite(audio.duration) ? audio.duration : duration;
+        if (!Number.isFinite(audioDuration) || audioDuration <= 0) return;
+
+        try {
+            navigator.mediaSession.setPositionState({
+                duration: audioDuration,
+                playbackRate: audio.playbackRate || playbackRate || 1,
+                position: Number.isFinite(audio.currentTime) ? audio.currentTime : currentTime,
+            });
+        } catch {
+            // Some browsers may throw if position state is unsupported.
+        }
+    }, [currentTime, duration, playbackRate]);
 
     // Media Session API
     const updateMediaSession = useCallback(() => {
@@ -176,11 +213,9 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
 
         navigator.mediaSession.setActionHandler('play', () => {
             audioRef.current?.play();
-            play();
         });
         navigator.mediaSession.setActionHandler('pause', () => {
             audioRef.current?.pause();
-            pause();
         });
         navigator.mediaSession.setActionHandler('seekbackward', () => {
             if (audioRef.current) {
@@ -192,7 +227,23 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
                 audioRef.current.currentTime = Math.min(audioRef.current.currentTime + SKIP_SECONDS, duration);
             }
         });
-    }, [currentEpisode, duration, play, pause]);
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+            if (!audioRef.current || details.seekTime === undefined) return;
+            const maxDuration = Number.isFinite(audioRef.current.duration)
+                ? audioRef.current.duration
+                : duration;
+            const seekTime = Number.isFinite(maxDuration)
+                ? Math.max(0, Math.min(details.seekTime, maxDuration))
+                : Math.max(0, details.seekTime);
+            if (typeof (audioRef.current as HTMLAudioElement & { fastSeek?: (time: number) => void }).fastSeek === 'function' && details.fastSeek) {
+                audioRef.current.fastSeek?.(seekTime);
+            } else {
+                audioRef.current.currentTime = seekTime;
+            }
+            setCurrentTime(seekTime);
+            updatePositionState();
+        });
+    }, [currentEpisode, duration, setCurrentTime, updatePositionState]);
 
     useEffect(() => {
         updateMediaSession();
@@ -202,12 +253,15 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
         if (audioRef.current) {
             setCurrentTime(audioRef.current.currentTime);
         }
+        updatePositionState();
     };
 
     const handleLoadedMetadata = () => {
         if (audioRef.current) {
             setDuration(audioRef.current.duration);
+            setPlaybackState(audioRef.current.paused ? 'paused' : 'playing');
         }
+        updatePositionState();
     };
 
     const handleSeek = (e: ChangeEvent<HTMLInputElement>) => {
@@ -215,19 +269,40 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
         if (audioRef.current) {
             audioRef.current.currentTime = time;
             setCurrentTime(time);
+            updatePositionState();
         }
     };
 
     const skipForward = () => {
         if (audioRef.current) {
             audioRef.current.currentTime = Math.min(audioRef.current.currentTime + SKIP_SECONDS, duration);
+            updatePositionState();
         }
     };
 
     const skipBackward = () => {
         if (audioRef.current) {
             audioRef.current.currentTime = Math.max(audioRef.current.currentTime - SKIP_SECONDS, 0);
+            updatePositionState();
         }
+    };
+
+    const handlePlay = () => {
+        play();
+        setPlaybackState('playing');
+        updatePositionState();
+    };
+
+    const handlePause = () => {
+        pause();
+        setPlaybackState('paused');
+        updatePositionState();
+    };
+
+    const handleEnded = () => {
+        pause();
+        setPlaybackState('none');
+        updatePositionState();
     };
 
     // Prevent hydration mismatch
@@ -465,10 +540,8 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
                                 onClick={() => {
                                     if (isPlaying) {
                                         audioRef.current?.pause();
-                                        pause();
                                     } else {
                                         audioRef.current?.play();
-                                        play();
                                     }
                                 }}
                                 className={`w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-[var(--orange-primary)]/40 flex items-center justify-center hover:bg-[var(--orange-primary)] hover:border-[var(--orange-primary)] hover:text-black transition-all ${isPlaying ? 'animate-pulse-glow' : ''}`}
@@ -494,9 +567,9 @@ export default function RadioTuner({ initialEpisodes, initialLang = 'zh' }: Radi
 
                     <audio
                         ref={audioRef}
-                        onEnded={() => pause()}
-                        onPause={() => pause()}
-                        onPlay={() => play()}
+                        onEnded={handleEnded}
+                        onPause={handlePause}
+                        onPlay={handlePlay}
                         onTimeUpdate={handleTimeUpdate}
                         onLoadedMetadata={handleLoadedMetadata}
                     />
