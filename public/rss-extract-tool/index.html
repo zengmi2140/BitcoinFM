@@ -346,7 +346,7 @@
   </div>
 
   <script>
-    // 多个 CORS 代理备选
+    // Multiple CORS proxy options
     const PROXIES = [
       url => `/api/proxy?url=${encodeURIComponent(url)}`,
       url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
@@ -357,7 +357,7 @@
     ];
     const STORAGE_KEY = 'rss_extract_history';
 
-    // 尝试多个代理获取 RSS
+    // Try multiple proxies to fetch RSS
     async function fetchWithProxy(url) {
       for (const proxyFn of PROXIES) {
         try {
@@ -375,17 +375,17 @@
           console.log('Proxy failed, trying next...', e);
         }
       }
-      throw new Error('所有代理均失败。可能是该源屏蔽了所有抓取方式，或者网络链接有问题。');
+      throw new Error('All proxies failed. The feed may block fetching or there is a network issue.');
     }
 
-    // 加载历史记录
+    // Load history
     function loadHistory() {
       const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       const datalist = document.getElementById('rssHistory');
       datalist.innerHTML = history.map(url => `<option value="${url}">`).join('');
     }
 
-    // 保存到历史记录
+    // Save to history
     function saveHistory(url) {
       let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       history = history.filter(u => u !== url);
@@ -395,7 +395,7 @@
       loadHistory();
     }
 
-    // 格式化时长
+    // Format duration
     function formatDuration(dur) {
       if (!dur) return '';
       if (dur.includes(':')) return dur;
@@ -408,14 +408,14 @@
       return `${m}:${String(s).padStart(2, '0')}`;
     }
 
-    // 格式化日期为 ISO
+    // Format date to ISO
     function formatDate(dateStr) {
       if (!dateStr) return new Date().toISOString();
       try { return new Date(dateStr).toISOString(); }
       catch { return dateStr; }
     }
 
-    // 计算相似度
+    // Compute similarity
     function similarity(title, keyword) {
       const t = title.toLowerCase();
       const k = keyword.toLowerCase();
@@ -427,7 +427,7 @@
       return score;
     }
 
-    // 显示消息
+    // Show message
     function showMsg(text, type = 'info') {
       const el = document.getElementById('message');
       el.className = `msg ${type}`;
@@ -435,22 +435,22 @@
       el.style.display = 'block';
     }
 
-    // 隐藏消息
+    // Hide message
     function hideMsg() {
       document.getElementById('message').style.display = 'none';
     }
 
-    // 搜索
+    // Search
     async function search() {
       const url = document.getElementById('rssUrl').value.trim();
       const keyword = document.getElementById('keyword').value.trim();
 
-      if (!url) { showMsg('请输入 RSS URL', 'error'); return; }
-      if (!keyword) { showMsg('请输入关键字', 'error'); return; }
+      if (!url) { showMsg('Please enter an RSS URL.', 'error'); return; }
+      if (!keyword) { showMsg('Please enter a keyword.', 'error'); return; }
 
       hideMsg();
       document.getElementById('searchBtn').disabled = true;
-      document.getElementById('searchBtn').textContent = '搜索中...';
+      document.getElementById('searchBtn').textContent = 'Searching...';
 
       try {
         const xml = await fetchWithProxy(url);
@@ -467,19 +467,19 @@
           return;
         }
 
-        // 解析并排序
+        // Parse and sort
         const episodes = [];
         items.forEach(item => {
           const title = item.querySelector('title')?.textContent || '';
           const audioUrl = item.querySelector('enclosure')?.getAttribute('url') || '';
           const pubDate = item.querySelector('pubDate')?.textContent || '';
 
-          // 处理 itunes:duration，需要特殊处理命名空间
+          // Handle itunes:duration (namespace-specific)
           let duration = '';
           const durationEl = item.getElementsByTagName('itunes:duration')[0];
           if (durationEl) duration = durationEl.textContent || '';
 
-          // 处理封面图
+          // Handle artwork
           let image = feedImage;
           const imageEl = item.getElementsByTagName('itunes:image')[0];
           if (imageEl) image = imageEl.getAttribute('href') || feedImage;
@@ -491,7 +491,7 @@
 
         episodes.sort((a, b) => similarity(b.title, keyword) - similarity(a.title, keyword));
 
-        // 显示前5个结果
+        // Show top 5 results
         const top = episodes.slice(0, 5).filter(e => similarity(e.title, keyword) > 0);
         if (top.length === 0) {
           showMsg('No matches found. Showing latest episodes:', 'info');
@@ -509,7 +509,7 @@
       }
     }
 
-    // 显示结果列表
+    // Render results list
     function showResults(episodes) {
       const list = document.getElementById('resultList');
       list.innerHTML = episodes.map((ep, i) => `
@@ -531,7 +531,7 @@
       selectEpisode(0);
     }
 
-    // 选择单集
+    // Select episode
     function selectEpisode(index) {
       const ep = window._episodes[index];
 
@@ -554,7 +554,7 @@
       document.getElementById('output').classList.add('show');
     }
 
-    // 复制 JSON
+    // Copy JSON
     function copyJson() {
       const text = document.getElementById('jsonOutput').textContent;
       navigator.clipboard.writeText(text).then(() => {
